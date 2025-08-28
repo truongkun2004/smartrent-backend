@@ -43,3 +43,31 @@ BEGIN
     WHERE id = @id;
 END
 GO
+
+CREATE OR ALTER PROCEDURE FindUser
+    @firebase_id NVARCHAR(255) = NULL,
+    @account NVARCHAR(255) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @firebase_id IS NOT NULL
+    BEGIN
+        SELECT id, name, created_at, password
+        FROM Users
+        WHERE firebase_id = @firebase_id;
+    END
+    ELSE IF @account IS NOT NULL
+    BEGIN
+        SELECT id, name, created_at, password
+        FROM Users
+        WHERE email = @account OR phone = @account;
+    END
+    ELSE
+    BEGIN
+        -- Không có input hợp lệ -> trả rỗng
+        SELECT NULL AS id, NULL AS name, NULL AS created_at, NULL AS password
+        WHERE 1 = 0;
+    END
+END
+GO

@@ -176,8 +176,9 @@ INSERT INTO PropertyTypes (name, has_details, description) VALUES
 (N'Chung cư', 1, N'Chung cư mini có nhiều phòng nhỏ');
 
 select * from Hosts
+select * from Users
 select * from Properties
 select * from PropertyAmenities
 select * from PropertyRooms
 select * from RoomAmenities
-exec GetPropertyDetail 1
+exec GetHostProperties 1

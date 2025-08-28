@@ -62,27 +62,38 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT 
-        p.id,
-        p.name,
-        p.address,
-        p.price,
-        p.rooms,
-        p.is_available,
-        p.approval_status,
-        p.created_at,
-        t.name AS type_name,
-        (
-            SELECT pa.amenity_id, a.name AS amenity_name
-            FROM PropertyAmenities pa
-            JOIN Amenities a ON pa.amenity_id = a.id
-            WHERE pa.property_id = p.id
-            FOR JSON PATH
-        ) AS amenities
-    FROM Properties p
-    JOIN PropertyTypes t ON p.type_id = t.id
-    WHERE p.host_id = @HostId
-    FOR JSON PATH;
+    SELECT (
+        SELECT 
+            p.id,
+            p.name,
+            t.id AS type_id,
+            t.name AS type_name,
+            p.address,
+            p.price,
+            p.area,
+            p.rooms,
+            p.created_at,
+            p.is_available,
+            p.approval_status,
+            CASE 
+                WHEN EXISTS (
+                    SELECT 1 
+                    FROM Contracts c
+                    WHERE c.property_id = p.id
+                      AND c.end_date > GETDATE()
+                ) THEN 1 ELSE 0
+            END AS is_published,
+            (
+                SELECT MAX(c.end_date)
+                FROM Contracts c
+                WHERE c.property_id = p.id
+                  AND c.end_date > GETDATE()
+            ) AS contract_end_date
+        FROM Properties p
+        JOIN PropertyTypes t ON p.type_id = t.id
+        WHERE p.host_id = @HostId
+        FOR JSON PATH, INCLUDE_NULL_VALUES
+    ) AS json_result;
 END
 GO
 
@@ -105,35 +116,44 @@ BEGIN
         p.description,
         p.contact_info,
         p.images,
+        p.is_available,
+        p.approval_status AS is_approved,
         ISNULL(AVG(r.rating), 0) AS rating,
-        CASE WHEN EXISTS (
-            SELECT 1 FROM Contracts c 
-            WHERE c.property_id = p.id AND c.end_date >= GETDATE()
-        ) THEN 1 ELSE 0 END AS is_published
+        CAST(
+            CASE WHEN EXISTS (
+                SELECT 1 FROM Contracts c 
+                WHERE c.property_id = p.id AND c.end_date >= GETDATE()
+            ) THEN 1 ELSE 0 END 
+        AS BIT) AS is_published
     FROM Properties p
     LEFT JOIN PropertyReviews r ON p.id = r.property_id AND r.status = 1
     WHERE p.id = @property_id
     GROUP BY 
         p.id, p.name, p.host_id, p.type_id, p.price, p.area, p.rooms,
-        p.address, p.description, p.contact_info, p.images;
+        p.address, p.description, p.contact_info, p.images,
+        p.is_available, p.approval_status;
 
-    -- Danh sách amenities của property
-    SELECT pa.amenity_id
+    -- Danh sách amenities của property (trả cả id + name)
+    SELECT a.id, a.name
     FROM PropertyAmenities pa
+    INNER JOIN Amenities a ON pa.amenity_id = a.id
     WHERE pa.property_id = @property_id;
 
-    -- Danh sách phòng và tiện ích phòng
+    -- Danh sách phòng
     SELECT 
         pr.id AS room_id,
         pr.name,
         pr.description,
         pr.images,
-        ISNULL((
-            SELECT STRING_AGG(ra.amenity_id, ',') 
-            FROM RoomAmenities ra 
-            WHERE ra.room_id = pr.id
-        ), '') AS amenity_ids
+        pr.is_available
     FROM PropertyRooms pr
+    WHERE pr.property_id = @property_id;
+
+    -- Tiện ích từng phòng
+    SELECT ra.room_id, a.id AS amenity_id, a.name
+    FROM RoomAmenities ra
+    INNER JOIN Amenities a ON ra.amenity_id = a.id
+    INNER JOIN PropertyRooms pr ON ra.room_id = pr.id
     WHERE pr.property_id = @property_id;
 END
 GO
