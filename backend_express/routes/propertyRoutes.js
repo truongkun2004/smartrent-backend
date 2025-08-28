@@ -13,4 +13,6 @@ router.delete('/:propertyId', propertyControllers.deleteProperty); // Delete
 router.patch('/rooms/:roomId/toggle', propertyControllers.togglePropertyRoomAvailability); // Toggle room
 router.delete('/rooms/:roomId', propertyControllers.deletePropertyRoom);
 
+router.post("/approval", propertyControllers.setPropertyApprovalStatus);
+
 module.exports = router;

@@ -13,6 +13,7 @@ const hostRoutes = require("./routes/hostRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const propertyRoutes = require("./routes/propertyRoutes");
 const userRoutes = require("./routes/userRoutes");
+const postingRoutes = require("./routes/postingRoutes"); // ✅ thêm
 
 app.use("/api/property-types", propertyTypeRoutes);
 app.use("/api/amenities", amenityRoutes);
@@ -20,6 +21,7 @@ app.use("/api/hosts", hostRoutes);
 app.use("/api", uploadRoutes);
 app.use("/api/properties", propertyRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/posting", postingRoutes); // ✅ mount route mới
 
 app.get("/", (req, res) => {
   res.send("🚀 Express server is running...");

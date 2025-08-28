@@ -43,7 +43,8 @@ CREATE TABLE PropertyTypes (
     id INT IDENTITY(1,1) PRIMARY KEY,
     name NVARCHAR(100) NOT NULL,
     has_details BIT DEFAULT 0,
-    description NVARCHAR(500)
+    description NVARCHAR(500),
+    price_multiplier DECIMAL(5,2) DEFAULT 1.0   -- hệ số giá dịch vụ
 );
 
 -- Properties
@@ -131,12 +132,16 @@ CREATE TABLE PostingServices (
 CREATE TABLE Contracts (
     id INT IDENTITY(1,1) PRIMARY KEY,
     property_id INT NOT NULL,
+    price_multiplier DECIMAL(5,2) DEFAULT 1.0,
     service_id INT NOT NULL,
     cost DECIMAL(18,0) NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    duration INT,
+    start_date DATE,
+    end_date DATE,
     host_id INT NOT NULL,
     created_at DATETIME DEFAULT GETDATE(),
+    status INT DEFAULT 0,
     FOREIGN KEY (property_id) REFERENCES Properties(id) ON DELETE CASCADE,
     FOREIGN KEY (service_id) REFERENCES PostingServices(id) ON DELETE CASCADE,
     FOREIGN KEY (host_id) REFERENCES Hosts(id)
@@ -169,16 +174,24 @@ INSERT INTO Amenities (name) VALUES
 (N'Bảo vệ 24/7');
 
 -- PropertyTypes sample data
-INSERT INTO PropertyTypes (name, has_details, description) VALUES
-(N'Nhà trọ', 0, N'Phòng trọ giá rẻ cho sinh viên'),
-(N'Nhà nguyên căn', 0, N'Nhà cho thuê nguyên căn'),
-(N'Ký túc xá', 1, N'Phòng trọ giá rẻ cho sinh viên'),
-(N'Chung cư', 1, N'Chung cư mini có nhiều phòng nhỏ');
+INSERT INTO PropertyTypes (name, has_details, description, price_multiplier) VALUES
+(N'Nhà trọ', 0, N'Phòng trọ giá rẻ cho sinh viên', 1.0),
+(N'Nhà nguyên căn', 0, N'Nhà cho thuê nguyên căn', 1.2),
+(N'Ký túc xá', 1, N'Phòng trọ giá rẻ cho sinh viên', 0.8),
+(N'Chung cư', 1, N'Chung cư mini có nhiều phòng nhỏ', 1.5);
+
+-- PostingServices sample data
+INSERT INTO PostingServices (name, cost, duration) VALUES
+(N'Gói ngày', 10000, 1),
+(N'Gói tuần', 50000, 7),
+(N'Gói tháng', 250000, 30),
+(N'Gói năm', 3000000, 365);
 
 select * from Hosts
+select * from Contracts
 select * from Users
 select * from Properties
 select * from PropertyAmenities
 select * from PropertyRooms
 select * from RoomAmenities
-exec GetHostProperties 1
+--exec GetHostProperties 1

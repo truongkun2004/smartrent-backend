@@ -87,10 +87,25 @@ async function getHostProperties(req, res) {
   }
 }
 
+async function depositToHost(req, res) {
+  try {
+    const { hostId, amount } = req.body;
+    if (!hostId || !amount) {
+      return res.status(400).json({ message: "hostId và amount là bắt buộc" });
+    }
+
+    await hostServices.depositToHost({ hostId, amount });
+    res.status(200).json({ message: "Nạp tiền thành công" });
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi khi nạp tiền", error: err.message });
+  }
+}
+
 module.exports = {
   addHost,
   updateHost,
   deleteHost,
   loginHost,
-  getHostProperties
+  getHostProperties,
+  depositToHost,
 };

@@ -7,13 +7,14 @@ GO
 CREATE OR ALTER PROCEDURE AddPropertyType
     @name NVARCHAR(100),
     @has_details BIT = 0,
-    @description NVARCHAR(500) = NULL
+    @description NVARCHAR(500) = NULL,
+    @price_multiplier DECIMAL(5,2) = 1.0
 AS
 BEGIN
-    INSERT INTO PropertyTypes (name, has_details, description)
-    VALUES (@name, @has_details, @description);
+    INSERT INTO PropertyTypes (name, has_details, description, price_multiplier)
+    VALUES (@name, @has_details, @description, @price_multiplier);
 
-    SELECT SCOPE_IDENTITY() AS NewPropertyTypeID; -- trả về ID vừa thêm
+    SELECT SCOPE_IDENTITY() AS NewPropertyTypeID;
 END
 GO
 
@@ -22,14 +23,16 @@ CREATE OR ALTER PROCEDURE UpdatePropertyType
     @id INT,
     @name NVARCHAR(100) = NULL,
     @has_details BIT = NULL,
-    @description NVARCHAR(500) = NULL
+    @description NVARCHAR(500) = NULL,
+    @price_multiplier DECIMAL(5,2) = 1.0
 AS
 BEGIN
     UPDATE PropertyTypes
     SET
         name = COALESCE(@name, name),
         has_details = COALESCE(@has_details, has_details),
-        description = COALESCE(@description, description)
+        description = COALESCE(@description, description),
+        price_multiplier = @price_multiplier
     WHERE id = @id;
 END
 GO
@@ -48,7 +51,7 @@ GO
 CREATE OR ALTER PROCEDURE GetPropertyTypes
 AS
 BEGIN
-    SELECT id, name, has_details, description
+    SELECT id, name, has_details, description, price_multiplier
     FROM PropertyTypes
     ORDER BY name;
 END

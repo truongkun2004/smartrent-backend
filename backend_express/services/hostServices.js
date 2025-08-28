@@ -83,10 +83,25 @@ async function getHostProperties(hostId) {
   return raw ? JSON.parse(raw) : [];
 }
 
+async function depositToHost({ hostId, amount }) {
+  try {
+    const pool = await sql.connect();
+    const result = await pool.request()
+      .input("HostId", sql.Int, hostId)
+      .input("Amount", sql.Decimal(18,0), amount)
+      .execute("DepositToHost");
+    return result.rowsAffected[0]; // trả về số row update
+  } catch (err) {
+    console.error("❌ Error in depositToHost:", err);
+    throw err;
+  }
+}
+
 module.exports = {
   addHost,
   updateHost,
   deleteHost,
   findHost,
-  getHostProperties
+  getHostProperties,
+  depositToHost,
 };

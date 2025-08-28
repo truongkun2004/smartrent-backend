@@ -208,6 +208,22 @@ async function getPropertyDetail(req, res) {
     }
 }
 
+
+const setPropertyApprovalStatus = async (req, res) => {
+  try {
+    const { propertyId, status } = req.body;
+
+    if (!propertyId || status === undefined) {
+      return res.status(400).json({ error: "propertyId and status are required" });
+    }
+
+    const result = await propertyServices.setPropertyApprovalStatus(propertyId, status);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 module.exports = {
   addProperty,
   updateProperty,
@@ -215,5 +231,6 @@ module.exports = {
   deleteProperty,
   togglePropertyRoomAvailability,
   deletePropertyRoom,
-  getPropertyDetail
+  getPropertyDetail,
+  setPropertyApprovalStatus,
 };

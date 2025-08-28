@@ -248,6 +248,21 @@ async function clearRoomAmenities(roomId) {
   }
 }
 
+const setPropertyApprovalStatus = async (propertyId, status) => {
+  try {
+    const pool = await sql.connect();
+    await pool.request()
+      .input("PropertyId", sql.Int, propertyId)
+      .input("Status", sql.Int, status)
+      .execute("SetPropertyApprovalStatus");
+
+    return { success: true, message: "Approval status updated successfully" };
+  } catch (err) {
+    console.error("Error in setPropertyApprovalStatus:", err);
+    throw err;
+  }
+};
+
 module.exports = {
   getHostProperties,
   getPropertyDetail,
@@ -264,5 +279,6 @@ module.exports = {
   togglePropertyRoomAvailability,
   deletePropertyRoom,
   addRoomAmenity,
-  clearRoomAmenities
+  clearRoomAmenities,
+  setPropertyApprovalStatus,
 };

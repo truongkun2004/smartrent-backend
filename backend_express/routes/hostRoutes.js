@@ -7,5 +7,6 @@ router.put("/:id", hostController.updateHost);
 router.delete("/:id", hostController.deleteHost);
 router.post("/login", hostController.loginHost);
 router.get("/:id/properties", hostController.getHostProperties);
+router.post("/deposit", hostController.depositToHost);
 
 module.exports = router;

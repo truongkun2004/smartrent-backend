@@ -81,3 +81,46 @@ BEGIN
     END
 END
 GO
+
+CREATE OR ALTER PROCEDURE DepositToHost
+    @HostId INT,
+    @Amount DECIMAL(18,0)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Kiểm tra số tiền hợp lệ
+    IF @Amount <= 0
+    BEGIN
+        RAISERROR(N'Số tiền nạp phải lớn hơn 0.', 16, 1);
+        RETURN;
+    END;
+
+    -- Kiểm tra host tồn tại
+    IF NOT EXISTS (SELECT 1 FROM Hosts WHERE id = @HostId)
+    BEGIN
+        RAISERROR(N'Host không tồn tại.', 16, 1);
+        RETURN;
+    END;
+
+    BEGIN TRANSACTION;
+    BEGIN TRY
+        -- Cập nhật số dư host
+        UPDATE Hosts
+        SET balance = balance + @Amount
+        WHERE id = @HostId;
+
+        -- Ghi lịch sử giao dịch
+        INSERT INTO Transactions (host_id, type, amount, created_at)
+        VALUES (@HostId, 'deposit', @Amount, GETDATE());
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        DECLARE @ErrMsg NVARCHAR(4000) = ERROR_MESSAGE();
+        RAISERROR(@ErrMsg, 16, 1);
+    END CATCH
+END;
+GO
+
