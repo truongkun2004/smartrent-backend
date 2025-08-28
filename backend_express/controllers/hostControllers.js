@@ -76,9 +76,21 @@ async function loginHost(req, res) {
   }
 }
 
+async function getHostProperties(req, res) {
+  try {
+    const { id } = req.params;
+    const data = await hostServices.getHostProperties(id);
+
+    res.status(200).json(data); // trả trực tiếp list
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi khi lấy properties", error: err.message });
+  }
+}
+
 module.exports = {
   addHost,
   updateHost,
   deleteHost,
-  loginHost
+  loginHost,
+  getHostProperties
 };

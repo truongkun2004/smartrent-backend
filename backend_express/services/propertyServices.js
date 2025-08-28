@@ -25,22 +25,36 @@ async function getPropertyDetail(propertyId) {
 
         const propertyInfo = result.recordsets[0][0];
 
-        // Amenities property
-        const amenities = result.recordsets[1].map(a => a.amenity_id);
+        // Amenities property: [{id, name}, ...]
+        const amenities = result.recordsets[1].map(a => ({
+            id: a.id,
+            name: a.name
+        }));
 
         // Property rooms
-        const propertyRooms = result.recordsets[2].map(r => ({
+        const rooms = result.recordsets[2].map(r => ({
             room_id: r.room_id,
             name: r.name,
             description: r.description,
             images: r.images,
-            amenity_ids: r.amenity_ids ? r.amenity_ids.split(',').map(Number) : []
+            amenities: [] // gắn sau
         }));
+
+        // Room amenities
+        const roomAmenities = result.recordsets[3];
+        for (const room of rooms) {
+            room.amenities = roomAmenities
+                .filter(ra => ra.room_id === room.room_id)
+                .map(ra => ({
+                    id: ra.amenity_id,
+                    name: ra.name
+                }));
+        }
 
         return {
             ...propertyInfo,
             amenities,
-            propertyRooms
+            propertyRooms: rooms
         };
     } catch (err) {
         console.error("Error in getPropertyDetail:", err);

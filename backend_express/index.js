@@ -12,12 +12,14 @@ const amenityRoutes = require("./routes/amenityRoutes");
 const hostRoutes = require("./routes/hostRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const propertyRoutes = require("./routes/propertyRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 app.use("/api/property-types", propertyTypeRoutes);
 app.use("/api/amenities", amenityRoutes);
 app.use("/api/hosts", hostRoutes);
 app.use("/api", uploadRoutes);
 app.use("/api/properties", propertyRoutes);
+app.use("/api/users", userRoutes);
 
 app.get("/", (req, res) => {
   res.send("🚀 Express server is running...");

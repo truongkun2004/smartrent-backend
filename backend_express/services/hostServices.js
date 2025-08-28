@@ -69,9 +69,24 @@ async function findHost({ firebase_id, account }) {
   }
 }
 
+async function getHostProperties(hostId) {
+  const pool = await sql.connect();
+  const result = await pool
+    .request()
+    .input("HostId", sql.Int, hostId)
+    .execute("GetHostProperties");
+
+  if (result.recordset.length === 0) return [];
+
+  // lấy đúng cột json_result
+  const raw = result.recordset[0].json_result;
+  return raw ? JSON.parse(raw) : [];
+}
+
 module.exports = {
   addHost,
   updateHost,
   deleteHost,
-  findHost
+  findHost,
+  getHostProperties
 };
