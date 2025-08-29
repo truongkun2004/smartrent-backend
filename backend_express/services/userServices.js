@@ -75,9 +75,40 @@ async function findUser({ firebase_id, account }) {
   }
 }
 
+const toggleUserFavorite = async (userId, propertyId) => {
+  const pool = await sql.connect();
+  const result = await pool.request()
+    .input("UserId", sql.Int, userId)
+    .input("PropertyId", sql.Int, propertyId)
+    .execute("ToggleUserFavorite");
+  
+  return result.recordset[0].action; // 'added' hoặc 'removed'
+};
+
+const getUserFavorites = async (userId) => {
+  const pool = await sql.connect();
+  const result = await pool.request()
+    .input("UserId", sql.Int, userId)
+    .execute("GetUserFavorites");
+  return result.recordset;
+};
+
+async function addPropertyReview(propertyId, userId, rating, comment) {
+    const pool = await sql.connect();
+    await pool.request()
+        .input('PropertyId', sql.Int, propertyId)
+        .input('UserId', sql.Int, userId)
+        .input('Rating', sql.Int, rating)
+        .input('Comment', sql.NVarChar(500), comment)
+        .execute('AddPropertyReview');
+}
+
 module.exports = {
   addUser,
   updateUser,
   deleteUser,
   findUser,
+  toggleUserFavorite,
+  getUserFavorites,
+  addPropertyReview,
 };

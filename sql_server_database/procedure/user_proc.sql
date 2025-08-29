@@ -71,3 +71,33 @@ BEGIN
     END
 END
 GO
+
+CREATE OR ALTER PROCEDURE AddPropertyReview
+    @PropertyId INT,
+    @UserId INT,
+    @Rating DECIMAL(3,1),
+    @Comment NVARCHAR(500)
+AS
+BEGIN
+    INSERT INTO PropertyReviews (property_id, user_id, rating, comment, created_at, status)
+    VALUES (@PropertyId, @UserId, @Rating, @Comment, GETDATE(), 1);
+END
+GO
+
+CREATE OR ALTER PROCEDURE GetPropertyReviews
+    @PropertyId INT
+AS
+BEGIN
+    SELECT pr.id,
+           pr.user_id,
+           u.name AS user_name,
+           pr.rating,
+           pr.comment,
+           pr.created_at
+    FROM PropertyReviews pr
+    INNER JOIN Users u ON pr.user_id = u.id
+    WHERE pr.property_id = @PropertyId
+      AND pr.status = 1
+    ORDER BY pr.created_at DESC;
+END
+GO

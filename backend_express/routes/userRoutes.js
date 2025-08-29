@@ -10,4 +10,10 @@ router.delete("/:id", userControllers.deleteUser);
 
 router.post("/login", userControllers.loginUser);
 
+router.post("/favorites/toggle", userControllers.toggleFavorite);
+
+router.get("/favorites/:userId", userControllers.getFavorites);
+
+router.post("/reviews", userControllers.addReview);
+
 module.exports = router;

@@ -263,6 +263,65 @@ const setPropertyApprovalStatus = async (propertyId, status) => {
   }
 };
 
+const searchPublishedProperties = async (filters) => {
+  const pool = await sql.connect();
+
+  // AmenityIdList TVP
+  const amenityTable = new sql.Table("AmenityIdList"); 
+  amenityTable.columns.add("amenity_id", sql.Int);
+  if (filters.amenity_ids && filters.amenity_ids.length > 0) {
+    filters.amenity_ids.forEach(id => amenityTable.rows.add(id));
+  }
+
+  const request = pool.request();
+  request.input("user_id", sql.Int, filters.user_id || null);
+  request.input("type_name", sql.NVarChar(100), filters.type_name || null);
+  request.input("keyword", sql.NVarChar(200), filters.keyword || null);
+  request.input("province", sql.NVarChar(100), filters.province || null);
+  request.input("district", sql.NVarChar(100), filters.district || null);
+  request.input("ward", sql.NVarChar(100), filters.ward || null);
+
+  if (filters.min_price !== undefined) {
+    request.input("min_price", sql.Decimal(18, 0), filters.min_price);
+  }
+  if (filters.max_price !== undefined) {
+    request.input("max_price", sql.Decimal(18, 0), filters.max_price);
+  }
+  if (filters.min_area !== undefined) {
+    request.input("min_area", sql.Decimal(10, 2), filters.min_area);
+  }
+  if (filters.max_area !== undefined) {
+    request.input("max_area", sql.Decimal(10, 2), filters.max_area);
+  }
+
+  request.input("amenity_ids", amenityTable);
+
+  const result = await request.execute("SearchPublishedProperties");
+
+  // ✅ Parse amenities từ JSON string → mảng object
+  const recordset = result.recordset.map(item => {
+    let amenities = [];
+    if (item.amenities) {
+      try {
+        amenities = JSON.parse(item.amenities);
+      } catch (e) {
+        amenities = [];
+      }
+    }
+    return { ...item, amenities };
+  });
+
+  return recordset;
+};
+
+async function getPropertyReviews(propertyId) {
+    const pool = await sql.connect();
+    const result = await pool.request()
+        .input('PropertyId', sql.Int, propertyId) // đảm bảo là number
+        .execute('GetPropertyReviews');
+    return result.recordset;
+}
+
 module.exports = {
   getHostProperties,
   getPropertyDetail,
@@ -281,4 +340,6 @@ module.exports = {
   addRoomAmenity,
   clearRoomAmenities,
   setPropertyApprovalStatus,
+  searchPublishedProperties,
+  getPropertyReviews,
 };

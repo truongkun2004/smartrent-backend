@@ -88,9 +88,43 @@ async function loginUser(req, res) {
   }
 }
 
+const toggleFavorite = async (req, res) => {
+  const { userId, propertyId } = req.body;
+  try {
+    const action = await userServices.toggleUserFavorite(userId, propertyId);
+    res.json({ message: `Favorite ${action} successfully.`, action });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const getFavorites = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const favorites = await userServices.getUserFavorites(userId);
+    res.status(200).json(favorites);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+async function addReview(req, res) {
+    try {
+        const { propertyId, userId, rating, comment } = req.body;
+        await userServices.addPropertyReview(propertyId, userId, rating, comment);
+        res.status(201).json({ message: "Review added successfully" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Internal server error" });
+    }
+}
+
 module.exports = {
   addUser,
   updateUser,
   deleteUser,
   loginUser,
+  toggleFavorite,
+  getFavorites,
+  addReview,
 };

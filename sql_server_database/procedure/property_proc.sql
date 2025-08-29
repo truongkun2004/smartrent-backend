@@ -106,7 +106,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Thông tin property cơ bản
+    -- Thông tin property cơ bản + rating trung bình + số lượng review
     SELECT 
         p.id,
         p.name,
@@ -121,7 +121,8 @@ BEGIN
         p.images,
         p.is_available,
         p.approval_status AS is_approved,
-        ISNULL(AVG(r.rating), 0) AS rating,
+        ISNULL(CAST(AVG(r.rating) AS DECIMAL(3,1)), 0) AS rating,
+        COUNT(r.id) AS review_count,
         CAST(
             CASE WHEN EXISTS (
                 SELECT 1 FROM Contracts c 
@@ -497,8 +498,11 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT f.id AS favorite_id,
+    SELECT 
+           f.id AS favorite_id,
            p.id AS property_id,
+           p.type_id,
+           pt.name AS type_name,
            p.name AS property_name,
            p.address,
            p.price,
@@ -507,7 +511,94 @@ BEGIN
            p.is_available
     FROM UserFavorites f
     JOIN Properties p ON f.property_id = p.id
+    LEFT JOIN PropertyTypes pt ON p.type_id = pt.id
     WHERE f.user_id = @UserId
     ORDER BY f.id DESC;
 END
 GO
+
+-- SEARCH
+
+-- Tạo type để truyền danh sách tiện nghi
+CREATE TYPE AmenityIdList AS TABLE (
+    amenity_id INT
+);
+GO
+
+-- Thủ tục tìm kiếm
+CREATE OR ALTER PROCEDURE SearchPublishedProperties
+    @user_id INT = NULL,
+    @type_name NVARCHAR(100) = NULL,
+    @keyword NVARCHAR(200) = NULL,
+    @province NVARCHAR(100) = NULL,
+    @district NVARCHAR(100) = NULL,
+    @ward NVARCHAR(100) = NULL,
+    @min_price DECIMAL(18,0) = NULL,
+    @max_price DECIMAL(18,0) = NULL,
+    @min_area DECIMAL(10,2) = NULL,
+    @max_area DECIMAL(10,2) = NULL,
+    @amenity_ids AmenityIdList READONLY
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        v.id,
+        v.name,
+        v.type_id,
+        v.type_name,
+        v.price,
+        v.area,
+        v.rooms,
+        v.province,
+        v.district,
+        v.ward,
+        v.specific_address,
+        v.is_available,
+        v.amenities,
+        CASE WHEN uf.id IS NOT NULL THEN 1 ELSE 0 END AS is_favorite
+    FROM ViewPublishedProperties v
+    LEFT JOIN UserFavorites uf 
+        ON uf.property_id = v.id AND uf.user_id = @user_id
+    WHERE
+        (@type_name IS NULL OR v.type_name = @type_name)
+        AND (@keyword IS NULL OR v.name LIKE N'%' + @keyword + '%' OR v.specific_address LIKE N'%' + @keyword + '%')
+        AND (@province IS NULL OR v.province = @province)
+        AND (@district IS NULL OR v.district = @district)
+        AND (@ward IS NULL OR v.ward = @ward)
+        AND (@min_price IS NULL OR v.price >= @min_price)
+        AND (@max_price IS NULL OR v.price <= @max_price)
+        AND (@min_area IS NULL OR v.area >= @min_area)
+        AND (@max_area IS NULL OR v.area <= @max_area)
+        AND (
+            NOT EXISTS (SELECT 1 FROM @amenity_ids)
+            OR NOT EXISTS (
+                SELECT a.amenity_id
+                FROM @amenity_ids a
+                WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM PropertyAmenities pa
+                    WHERE pa.property_id = v.id
+                      AND pa.amenity_id = a.amenity_id
+                )
+            )
+        );
+END;
+GO
+
+-- TEST
+DECLARE @amenities AmenityIdList;
+INSERT INTO @amenities (amenity_id) VALUES (1), (2);
+
+EXEC SearchPublishedProperties
+    @user_id = 1,
+    @type_name = N'Nhà Nguyên căn',
+    @keyword = N'Cozy',
+    @province = N'Hưng Yên',
+    @district = N'Khoái Châu',
+    @ward = NULL,
+    @min_price = 1000000,
+    @max_price = 5000000,
+    @min_area = 20,
+    @max_area = 50,
+    @amenity_ids = @amenities;

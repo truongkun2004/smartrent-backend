@@ -14,5 +14,8 @@ router.patch('/rooms/:roomId/toggle', propertyControllers.togglePropertyRoomAvai
 router.delete('/rooms/:roomId', propertyControllers.deletePropertyRoom);
 
 router.post("/approval", propertyControllers.setPropertyApprovalStatus);
+router.post("/search", propertyControllers.searchProperties);
+
+router.get("/reviews/:propertyId", propertyControllers.getReviews);
 
 module.exports = router;

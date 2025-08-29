@@ -103,7 +103,7 @@ CREATE TABLE PropertyReviews (
     id INT IDENTITY(1,1) PRIMARY KEY,
     property_id INT NOT NULL,
     user_id INT NOT NULL,
-    rating INT CHECK (rating BETWEEN 1 AND 5),
+    rating DECIMAL(3,1),
     created_at DATETIME DEFAULT GETDATE(),
     status BIT DEFAULT 1,
     comment NVARCHAR(500),
@@ -159,6 +159,42 @@ CREATE TABLE Transactions (
     FOREIGN KEY (contract_id) REFERENCES Contracts(id)
 );
 
+GO
+
+CREATE OR ALTER VIEW ViewPublishedProperties AS
+SELECT 
+    p.id,
+    p.name,
+    p.type_id,
+    pt.name AS type_name,
+    p.price,
+    p.area,
+    p.rooms,
+    PARSENAME(REPLACE(p.address, '/', '.'), 4) AS province,
+    PARSENAME(REPLACE(p.address, '/', '.'), 3) AS district,
+    PARSENAME(REPLACE(p.address, '/', '.'), 2) AS ward,
+    PARSENAME(REPLACE(p.address, '/', '.'), 1) AS specific_address,
+    p.is_available,
+    (
+        SELECT 
+            pa.amenity_id,
+            a.name
+        FROM PropertyAmenities pa
+        JOIN Amenities a ON pa.amenity_id = a.id
+        WHERE pa.property_id = p.id
+        FOR JSON PATH
+    ) AS amenities
+FROM Properties p
+JOIN PropertyTypes pt ON p.type_id = pt.id
+WHERE p.approval_status = 1
+  AND EXISTS (
+      SELECT 1 
+      FROM Contracts c
+      WHERE c.property_id = p.id
+        AND c.end_date > GETDATE()
+  );
+GO
+
 -- INSERT DATA
 -- Amenities sample data
 INSERT INTO Amenities (name) VALUES
@@ -187,9 +223,12 @@ INSERT INTO PostingServices (name, cost, duration) VALUES
 (N'Gói tháng', 250000, 30),
 (N'Gói năm', 3000000, 365);
 
+select * from ViewPublishedProperties
+
 select * from Hosts
 select * from Contracts
 select * from Users
+select * from PropertyReviews
 select * from Properties
 select * from PropertyAmenities
 select * from PropertyRooms

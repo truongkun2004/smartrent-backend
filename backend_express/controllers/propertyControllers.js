@@ -224,6 +224,42 @@ const setPropertyApprovalStatus = async (req, res) => {
   }
 };
 
+const searchProperties = async (req, res) => {
+  try {
+    const filters = {
+      user_id: req.body.user_id,
+      type_name: req.body.type_name,
+      keyword: req.body.keyword,
+      province: req.body.province,
+      district: req.body.district,
+      ward: req.body.ward,
+      min_price: req.body.min_price,
+      max_price: req.body.max_price,
+      min_area: req.body.min_area,
+      max_area: req.body.max_area,
+      amenity_ids: req.body.amenity_ids || []
+    };
+
+    const properties = await propertyServices.searchPublishedProperties(filters);
+
+    // ✅ Trả thẳng list JSON
+    res.json(properties);
+  } catch (err) {
+    console.error("SearchPublishedProperties error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+async function getReviews(req, res) {
+    try {
+        const propertyId = parseInt(req.params.propertyId, 10);
+        const reviews = await propertyServices.getPropertyReviews(propertyId);
+        res.json(reviews);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Internal server error" });
+    }
+}
 module.exports = {
   addProperty,
   updateProperty,
@@ -233,4 +269,6 @@ module.exports = {
   deletePropertyRoom,
   getPropertyDetail,
   setPropertyApprovalStatus,
+  searchProperties,
+  getReviews
 };
